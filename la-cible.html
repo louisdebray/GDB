@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="icon" type="image/png" href="GDB Logo.png">
+<title>GDB - La Cible</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0eff8;
+    --muted: rgba(240,239,248,0.4);
+    --hint: rgba(240,239,248,0.15);
+
+    --c1: #e8c547;
+    --c2: #f07d3a;
+    --c3: #e03a5a;
+    --c5: #9b5cf6;
+    --c10: #3b82f6;
+    --c15: #10c97e;
+    --cul: #f43f5e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 0 120px;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 24px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+  .logo span { color: var(--c5); }
+  .btn-change-game {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-change-game:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── JOUEUR FIXE (au-dessus de la banque) ── */
+  .fixed-player {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .fixed-player-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* ── BANQUE FIXE ── */
+  .bank-pill {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid rgba(155,92,246,0.35);
+    border-radius: 28px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+  }
+  .bank-count {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--c5);
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+  .bank-count.bump { animation: bump 0.3s ease; }
+  @keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+  /* ── COMPTEURS ── */
+  .counters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 16px 20px 0;
+  }
+  .counter-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .counter-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    line-height: 1;
+  }
+  .counter-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── SECTIONS ── */
+  .section-header {
+    padding: 20px 20px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── CARD GRID ── */
+  .card-grid {
+    display: grid;
+    gap: 8px;
+    padding: 0 20px;
+  }
+  .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .cible-card {
+    aspect-ratio: 2/3;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s, border-color 0.2s;
+    user-select: none;
+  }
+  .cible-card:active { transform: scale(0.94); }
+  .cible-card.used { opacity: 0.25; pointer-events: none; }
+  .cible-card.flipping { animation: flip 0.4s ease forwards; }
+  @keyframes flip {
+    0%   { transform: rotateY(0deg); }
+    50%  { transform: rotateY(90deg); opacity: 0.3; }
+    100% { transform: rotateY(0deg); }
+  }
+
+  .card-suit {
+    font-size: 30px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .card-gorge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Couleur par catégorie */
+  .cat-1  { border-color: color-mix(in srgb, var(--c1) 40%, transparent); }
+  .cat-1 .card-gorge  { color: var(--c1); }
+  .cat-2  { border-color: color-mix(in srgb, var(--c2) 40%, transparent); }
+  .cat-2 .card-gorge  { color: var(--c2); }
+  .cat-3  { border-color: color-mix(in srgb, var(--c3) 40%, transparent); }
+  .cat-3 .card-gorge  { color: var(--c3); }
+  .cat-5  { border-color: color-mix(in srgb, var(--c5) 40%, transparent); }
+  .cat-5 .card-gorge  { color: var(--c5); }
+  .cat-10 { border-color: color-mix(in srgb, var(--c10) 40%, transparent); }
+  .cat-10 .card-gorge { color: var(--c10); }
+  .cat-15 { border-color: color-mix(in srgb, var(--c15) 40%, transparent); }
+  .cat-15 .card-gorge { color: var(--c15); }
+  .cat-cul { border-color: color-mix(in srgb, var(--cul) 50%, transparent); background: color-mix(in srgb, var(--cul) 8%, var(--surface)); }
+  .cat-cul .card-gorge { color: var(--cul); font-size: 11px; }
+
+  /* Fond coloré subtil au hover */
+  .cat-1:hover  { background: color-mix(in srgb, var(--c1) 8%, var(--surface)); }
+  .cat-2:hover  { background: color-mix(in srgb, var(--c2) 8%, var(--surface)); }
+  .cat-3:hover  { background: color-mix(in srgb, var(--c3) 8%, var(--surface)); }
+  .cat-5:hover  { background: color-mix(in srgb, var(--c5) 8%, var(--surface)); }
+  .cat-10:hover { background: color-mix(in srgb, var(--c10) 8%, var(--surface)); }
+  .cat-15:hover { background: color-mix(in srgb, var(--c15) 8%, var(--surface)); }
+
+  /* ── CARTE FINALE ── */
+  .final-card-wrap { padding: 12px 20px 0; }
+  .final-card {
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    border: 2px solid color-mix(in srgb, var(--cul) 50%, transparent);
+    background: color-mix(in srgb, var(--cul) 6%, var(--surface));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .final-card:active { transform: scale(0.98); }
+  .final-card.used { opacity: 0.25; pointer-events: none; }
+  .final-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--cul);
+    letter-spacing: 0.05em;
+  }
+  .final-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .final-icon { font-size: 32px; line-height: 1; }
+
+  /* ── BOTTOM SHEET ── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: flex-end;
+  }
+  .overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .sheet {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 20px 20px 40px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--hint);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .sheet-player {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+  .sheet-gorge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .sheet-label {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .sheet-q {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+  .sheet-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .btn {
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-oui { background: var(--c15); color: #0a2e1e; }
+  .btn-non { background: var(--c3); color: #fff; }
+
+  /* ── SHEET "C'EST FAIT" ── */
+  .drink-player {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .drink-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    line-height: 1;
+    text-align: center;
+    color: var(--c3);
+    margin-bottom: 4px;
+  }
+  .drink-label {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .btn-done {
+    width: 100%;
+    background: var(--c15);
+    color: #0a2e1e;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── RESET BTN ── */
+  .reset-wrap { padding: 24px 20px 0; text-align: center; }
+  .btn-reset {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-reset:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* Séparateur */
+  .divider { height: 1px; background: var(--border); margin: 20px 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">La <span>Cible</span></div>
+  <button class="btn-change-game" onclick="window.location.href='index.html'">Changer de jeu</button>
+</header>
+
+<!-- Compteurs -->
+<div class="counters">
+  <div class="counter-item">
+    <div class="counter-val" id="cnt-used">0</div>
+    <div class="counter-lbl">Retournées</div>
+  </div>
+  <div class="counter-item">
+    <div class="counter-val" id="cnt-remain">36</div>
+    <div class="counter-lbl">Restantes</div>
+  </div>
+</div>
+
+
+<!-- Section cercle extérieur 1g -->
+<div class="section-header">Cercle extérieur — 1 gorgée</div>
+<div class="card-grid cols-4" id="grid-1"></div>
+
+<!-- Section cercle milieu 2g -->
+<div class="section-header">Cercle milieu — 2 gorgées</div>
+<div class="card-grid cols-4" id="grid-2"></div>
+
+<!-- Section cercle proche centre 3g -->
+<div class="section-header">Cercle intérieur — 3 gorgées</div>
+<div class="card-grid cols-4" id="grid-3"></div>
+
+<div class="divider"></div>
+
+<!-- Section croix 5g -->
+<div class="section-header">Croix extérieure — 5 gorgées</div>
+<div class="card-grid cols-4" id="grid-5"></div>
+
+<!-- Section croix 10g -->
+<div class="section-header">Croix milieu — 10 gorgées</div>
+<div class="card-grid cols-4" id="grid-10"></div>
+
+<!-- Section croix centre 15g -->
+<div class="section-header">Croix centre — 15 gorgées</div>
+<div class="card-grid cols-4" id="grid-15"></div>
+
+<!-- Carte finale -->
+<div class="divider"></div>
+<div class="section-header">Carte finale</div>
+<div class="final-card-wrap">
+  <div class="final-card" id="finalCard" onclick="openFinal()">
+    <div>
+      <div class="final-label">Cul Sec</div>
+      <div class="final-sub">Disponible quand toutes les autres sont retournées</div>
+    </div>
+    <div class="final-icon" id="finalIcon"></div>
+  </div>
+</div>
+
+<!-- Reset -->
+<div class="reset-wrap">
+  <button class="btn-reset" onclick="resetGame()">Recommencer une partie</button>
+</div>
+
+<!-- Joueur fixe -->
+<div class="fixed-player" id="fixedPlayer">
+  <span style="color:var(--muted);font-size:12px">Tour de</span>
+  <span class="fixed-player-name" id="fixedPlayerName"></span>
+</div>
+
+<!-- Banque fixe -->
+<div class="bank-pill">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M7 1.5C7 1.5 2 5 2 8.5a5 5 0 0 0 10 0C12 5 7 1.5 7 1.5Z" stroke="rgba(155,92,246,0.8)" stroke-width="1.2" fill="rgba(155,92,246,0.15)"/>
+  </svg>
+  <span style="color:var(--muted);font-size:13px">Banque</span>
+  <span class="bank-count" id="bankCount">0</span>
+  <span style="color:var(--muted);font-size:13px">g</span>
+</div>
+
+<!-- Bottom Sheet principal -->
+<div class="overlay" id="overlay" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-player" id="sheetPlayer"></div>
+    <div class="sheet-gorge" id="sheetGorge"></div>
+    <div class="sheet-label" id="sheetLabel"></div>
+    <div class="sheet-q" id="sheetQ"></div>
+    <div class="sheet-btns">
+      <button class="btn btn-oui" onclick="resolve(true)">Oui ✓</button>
+      <button class="btn btn-non" onclick="resolve(false)">Non ✗</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Sheet "C'est fait" -->
+<div class="overlay" id="overlay-drink">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="drink-player" id="drinkPlayer"></div>
+    <div class="drink-amount" id="drinkAmount"></div>
+    <div class="drink-label">gorgées à boire</div>
+    <button class="btn btn-done" onclick="confirmDrink()">C'est fait ✓</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUITS = ['♥','♦','♠','♣'];
+const CIRCLE_CATS = [1, 2, 3];
+const CATS = [
+  { id:1,  val:1,  count:12, color:'var(--c1)',  label:'1 gorgée' },
+  { id:2,  val:2,  count:8,  color:'var(--c2)',  label:'2 gorgées' },
+  { id:3,  val:3,  count:4,  color:'var(--c3)',  label:'3 gorgées' },
+  { id:5,  val:5,  count:4,  color:'var(--c5)',  label:'5 gorgées' },
+  { id:10, val:10, count:4,  color:'var(--c10)', label:'10 gorgées' },
+  { id:15, val:15, count:4,  color:'var(--c15)', label:'15 gorgées' },
+];
+
+let state = {};
+let currentCard = null;
+let pendingDrink = null; // { total, resolveCard, catId, idx, el }
+let bank = 0;
+let players = [];
+let currentPlayerIndex = 0;
+
+// ── JOUEURS ──────────────────────────────────────────
+
+function loadPlayers() {
+  try {
+    players = JSON.parse(localStorage.getItem('gdb_players') || '[]');
+  } catch(e) { players = []; }
+  if (players.length === 0) players = ['Le joueur'];
+}
+
+function getCurrentPlayer() {
+  return players[currentPlayerIndex % players.length];
+}
+
+function advancePlayer() {
+  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+  updateCurrentPlayerIndicator();
+}
+
+function updateCurrentPlayerIndicator() {
+  document.getElementById('fixedPlayerName').textContent = getCurrentPlayer();
+}
+
+// ── ÉTAT ─────────────────────────────────────────────
+
+function getRandomSuit() {
+  return SUITS[Math.floor(Math.random() * SUITS.length)];
+}
+
+function suitColor(suit) {
+  return (suit === '♥' || suit === '♦') ? '#e05a5a' : 'var(--text)';
+}
+
+function initState() {
+  state = {};
+  CATS.forEach(cat => {
+    const colors = CIRCLE_CATS.includes(cat.id)
+      ? Array.from({ length: cat.count }, () => Math.random() < 0.5 ? 'ROUGE' : 'NOIR')
+      : null;
+    state[cat.id] = { remaining: cat.count, colors };
+  });
+  state['cul'] = { used: false, suit: getRandomSuit() };
+  bank = 0;
+  currentPlayerIndex = 0;
+  updateCurrentPlayerIndicator();
+}
+
+// ── UI ────────────────────────────────────────────────
+
+function renderGrid(catId, count, gridId) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement('div');
+    card.className = `cible-card cat-${catId}`;
+    card.id = `card-${catId}-${i}`;
+    card.innerHTML = `
+      <div class="card-suit" style="color:var(--muted)">?</div>
+      <div class="card-gorge">${catId + 'g'}</div>
+    `;
+    card.onclick = () => tapCard(catId, i, card);
+    grid.appendChild(card);
+  }
+}
+
+function buildUI() {
+  CATS.forEach(cat => renderGrid(cat.id, cat.count, `grid-${cat.id}`));
+  updateFinalCardSuit();
+  updateCounters();
+  checkFinalAvailability();
+}
+
+function updateFinalCardSuit() {
+  const el = document.getElementById('finalIcon');
+  el.textContent = '?';
+  el.style.color = 'var(--muted)';
+}
+
+// ── CARTES ────────────────────────────────────────────
+
+function tapCard(catId, idx, el) {
+  if (el.classList.contains('used')) return;
+
+  const catData = CATS.find(c => c.id === catId);
+  const suitEl = el.querySelector('.card-suit');
+  let displayVal;
+
+  if (CIRCLE_CATS.includes(catId)) {
+    const color = state[catId].colors[idx];
+    suitEl.textContent = color;
+    suitEl.style.color = color === 'ROUGE' ? '#e05a5a' : 'var(--text)';
+    suitEl.style.fontSize = '14px';
+    displayVal = color;
+  } else {
+    const suit = getRandomSuit();
+    suitEl.textContent = suit;
+    suitEl.style.color = suitColor(suit);
+    suitEl.style.fontSize = '';
+    displayVal = suit;
+  }
+
+  el.classList.add('flipping');
+  currentCard = { catId, idx, el, val: catData.val, label: catData.label, displayVal };
+
+  setTimeout(() => {
+    el.classList.remove('flipping');
+    openSheet(catData.val, catData.label, displayVal);
+  }, 400);
+}
+
+function openFinal() {
+  const remaining = CATS.reduce((acc, cat) => acc + state[cat.id].remaining, 0);
+  if (remaining > 0) {
+    showToast(`Retourne d'abord les ${remaining} cartes restantes !`);
+    return;
+  }
+  const suit = state['cul'].suit;
+  const iconEl = document.getElementById('finalIcon');
+  iconEl.textContent = suit;
+  iconEl.style.color = suitColor(suit);
+  currentCard = { catId: 'cul', val: null, label: 'Cul sec', displayVal: suit };
+  openSheet(null, 'Cul sec !', suit);
+}
+
+// ── SHEETS ───────────────────────────────────────────
+
+function openSheet(val, label, displayVal) {
+  const player = getCurrentPlayer();
+  document.getElementById('sheetPlayer').textContent = 'Tour de ' + player;
+  document.getElementById('sheetQ').textContent = player + ' a-t-il·elle eu bon ?';
+
+  const gorgeEl = document.getElementById('sheetGorge');
+  gorgeEl.textContent = displayVal;
+
+  if (displayVal === 'ROUGE') {
+    gorgeEl.style.color = '#e05a5a';
+  } else if (displayVal === 'NOIR') {
+    gorgeEl.style.color = 'var(--text)';
+  } else {
+    gorgeEl.style.color = suitColor(displayVal);
+  }
+
+  document.getElementById('sheetLabel').textContent = label + (val !== null ? ' en jeu' : '');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeSheet(e) {
+  if (e && e.target !== document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+  currentCard = null;
+}
+
+function openDrinkSheet(total) {
+  document.getElementById('drinkPlayer').textContent = getCurrentPlayer();
+  document.getElementById('drinkAmount').textContent = total;
+  document.getElementById('overlay-drink').classList.add('open');
+}
+
+// ── RÉSOLUTION ───────────────────────────────────────
+
+function resolve(correct) {
+  document.getElementById('overlay').classList.remove('open');
+  if (!currentCard) return;
+
+  if (currentCard.catId === 'cul') {
+    document.getElementById('finalCard').classList.add('used');
+    showToast('Cul sec bu ! Partie terminée 🍺');
+    currentCard = null;
+    return;
+  }
+
+  const { catId, idx, el, val } = currentCard;
+  currentCard = null;
+
+  if (correct) {
+    bank += val;
+    updateBank();
+    el.classList.add('used');
+    state[catId].remaining--;
+    updateCounters();
+    checkFinalAvailability();
+    showToast(`+${val}g dans la banque (${bank}g total)`);
+    advancePlayer();
+  } else {
+    const total = bank + val;
+    pendingDrink = { total, catId, idx, el };
+    openDrinkSheet(total);
+  }
+}
+
+function confirmDrink() {
+  document.getElementById('overlay-drink').classList.remove('open');
+  if (!pendingDrink) return;
+
+  bank = 0;
+  updateBank();
+  pendingDrink.el.classList.add('used');
+  state[pendingDrink.catId].remaining--;
+  updateCounters();
+  checkFinalAvailability();
+  advancePlayer();
+
+  pendingDrink = null;
+}
+
+// ── UTILITAIRES ──────────────────────────────────────
+
+function updateBank() {
+  const el = document.getElementById('bankCount');
+  el.textContent = bank;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+function updateCounters() {
+  const totalCards = CATS.reduce((a, c) => a + c.count, 0);
+  const remaining = CATS.reduce((acc, cat) => acc + state[cat.id].remaining, 0);
+  document.getElementById('cnt-used').textContent = totalCards - remaining;
+  document.getElementById('cnt-remain').textContent = remaining;
+}
+
+function checkFinalAvailability() {
+  const remaining = CATS.reduce((acc, cat) => acc + state[cat.id].remaining, 0);
+  const finalCard = document.getElementById('finalCard');
+  if (remaining === 0 && !state['cul'].used) {
+    finalCard.style.opacity = '1';
+    finalCard.style.pointerEvents = 'auto';
+    finalCard.style.borderColor = 'var(--cul)';
+    showToast('Toutes les cartes retournées ! Carte finale disponible 🎯');
+  }
+}
+
+function resetGame() {
+  if (!confirm('Recommencer la partie ?')) return;
+  initState();
+  buildUI();
+  document.getElementById('finalCard').classList.remove('used');
+  document.getElementById('finalCard').style.opacity = '';
+  document.getElementById('finalCard').style.pointerEvents = '';
+  updateBank();
+  showToast('Nouvelle partie lancée !');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ─────────────────────────────────────────────
+loadPlayers();
+initState();
+buildUI();
+</script>
+</body>
+</html>
