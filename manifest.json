@@ -1,0 +1,20 @@
+{
+  "name": "GDB",
+  "short_name": "GDB",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "GDB Logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "GDB Logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
