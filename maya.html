@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="icon" type="image/png" href="GDB Logo.png">
+<link rel="apple-touch-icon" href="GDB Logo.png">
+<link rel="manifest" href="manifest.json">
+<title>GDB - Le Maya</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0eff8;
+    --muted: rgba(240,239,248,0.4);
+    --hint: rgba(240,239,248,0.15);
+    --c3: #e03a5a;
+    --c15: #10c97e;
+    --maya: #e8c547;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 0 120px;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 24px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+  .logo span { color: var(--maya); }
+  .btn-change-game {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-change-game:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── ZONE DÉS ── */
+  .dice-zone {
+    padding: 48px 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+  .dice-row {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+  }
+  .die {
+    width: 100px;
+    height: 100px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 58px;
+    color: var(--text);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    transition: border-color 0.3s, box-shadow 0.3s, color 0.3s;
+  }
+  .die.rolling { animation: roll 0.55s ease forwards; }
+  @keyframes roll {
+    0%   { transform: rotate(0deg)   scale(1);    }
+    20%  { transform: rotate(-15deg) scale(0.9);  }
+    40%  { transform: rotate(20deg)  scale(1.05); }
+    60%  { transform: rotate(-10deg) scale(0.95); }
+    80%  { transform: rotate(8deg)   scale(1.02); }
+    100% { transform: rotate(0deg)   scale(1);    }
+  }
+  .die.maya-glow {
+    border-color: var(--maya);
+    box-shadow: 0 0 28px rgba(232,197,71,0.4);
+    color: var(--maya);
+  }
+  .die-placeholder { font-size: 40px; color: var(--hint); }
+
+  /* ── SCORE / MAYA LABEL ── */
+  .score-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--text);
+    text-align: center;
+    display: none;
+  }
+  .score-label.show { display: block; }
+  .score-label.is-maya {
+    color: var(--maya);
+    animation: pulse-maya 0.7s ease-in-out 4;
+  }
+  @keyframes pulse-maya {
+    0%,100% { opacity: 1; transform: scale(1);    }
+    50%     { opacity: 0.7; transform: scale(1.08); }
+  }
+
+  /* ── BOUTONS ── */
+  .btn-area {
+    padding: 32px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-roll {
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    background: var(--maya);
+    color: #1a1200;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn-roll:active  { transform: scale(0.97); }
+  .btn-roll:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-next {
+    width: 100%;
+    padding: 17px;
+    border-radius: 14px;
+    border: none;
+    background: var(--maya);
+    color: #0a0a0f;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn-next:active { transform: scale(0.97); }
+  .btn-next.show   { display: block; }
+
+  /* ── RESET ── */
+  .reset-wrap { padding: 28px 20px 0; text-align: center; }
+  .btn-reset {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-reset:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── BOTTOM SHEET RÈGLES ── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: flex-end;
+  }
+  .overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .sheet {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 20px 20px 44px;
+    animation: slideUp 0.3s ease;
+    max-height: 82vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--hint);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .rules-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: var(--maya);
+    margin-bottom: 20px;
+    letter-spacing: 0.04em;
+  }
+  .rules-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .rules-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--maya);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .rules-block p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .rules-block p strong { color: var(--text); font-weight: 600; }
+  .rules-block p em     { color: var(--text); font-style: normal; opacity: 0.75; }
+  .rules-divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .btn-close-rules {
+    width: 100%;
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ── BOUTON ? HEADER ── */
+  .btn-rules {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-rules:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── JOUEUR FIXE ── */
+  .fixed-player {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 10px 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .fp-label { color: var(--muted); font-size: 12px; }
+  .fp-name  { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); line-height: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">LE <span>MAYA</span></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-rules" onclick="openRules()">Règles du jeu ?</button>
+    <button class="btn-change-game" onclick="window.location.href='index.html'">Changer de jeu</button>
+  </div>
+</header>
+
+<!-- Sheet règles -->
+<div class="overlay" id="overlay-rules" onclick="closeRulesOnBg(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="rules-title">Le Maya — Règles du jeu</div>
+
+    <div class="rules-block">
+      <div class="rules-section-title">🎲 COMMENT JOUER</div>
+      <p><strong>1.</strong> Lance les dés en tapant l'écran.<br>
+      Le score = le plus grand dé est la dizaine.<br>
+      <em>Exemple : tu fais 4 et 6 → ton score est 64.</em></p>
+
+      <p><strong>2.</strong> Mémorise ton score et annonce-le à voix haute au joueur suivant.<br>
+      Tu peux mentir et annoncer un score plus élevé que ce que tu as vraiment fait !</p>
+
+      <p><strong>3.</strong> Le joueur suivant doit faire <strong>MIEUX</strong> que le score annoncé.<br>
+      S'il pense que tu as menti, il peut dire <strong>"Tu mens !"</strong></p>
+    </div>
+
+    <div class="rules-divider"></div>
+
+    <div class="rules-block">
+      <div class="rules-section-title">⚔️ EN CAS DE "TU MENS !"</div>
+      <p>→ Tu montres tes vrais dés.</p>
+      <p>• Tu avais dit vrai → celui qui t'a challengé boit <strong>2 gorgées</strong>.<br>
+      • Tu avais menti → tu bois <strong>2 gorgées</strong>.</p>
+      <p>Mais avant de boire, le menteur peut dire <strong>"T'es sûr ?"</strong> :<br>
+      • Il dit NON → c'est lui qui boit 2 gorgées.<br>
+      • Il dit OUI → le menteur boit 2g OU dit <strong>"T'es vraiment sûr ?"</strong> :<br>
+      &nbsp;&nbsp;• Il dit NON → c'est lui qui boit 3 gorgées.<br>
+      &nbsp;&nbsp;• Il dit OUI → les dés sont révélés pour de vrai.<br>
+      &nbsp;&nbsp;Le perdant boit <strong>3 gorgées</strong>.</p>
+    </div>
+
+    <div class="rules-divider"></div>
+
+    <div class="rules-block">
+      <div class="rules-section-title">😵 SI TU FAIS MOINS QUE LE PRÉCÉDENT</div>
+      <p>Tu peux <strong>avouer</strong> → tu bois 1 gorgée et ça passe au suivant.<br>
+      Ou tu peux mentir et annoncer un score plus élevé !</p>
+    </div>
+
+    <div class="rules-divider"></div>
+
+    <div class="rules-block">
+      <div class="rules-section-title">🏆 LE MAYA (5 + 6 = meilleur score)</div>
+      <p>Si le joueur suivant accepte le Maya sans challenger → il fait <strong>cul sec !</strong></p>
+    </div>
+
+    <div class="rules-divider"></div>
+
+    <div class="rules-block">
+      <p>➡️ Appuie sur le bouton doré pour passer au joueur suivant.</p>
+    </div>
+
+    <button class="btn-close-rules" onclick="closeRules()">Fermer ✕</button>
+  </div>
+</div>
+
+<!-- Dés -->
+<div class="dice-zone">
+  <div class="dice-row">
+    <div class="die" id="die1"><span class="die-placeholder">?</span></div>
+    <div class="die" id="die2"><span class="die-placeholder">?</span></div>
+  </div>
+  <div class="score-label" id="scoreLabel"></div>
+</div>
+
+<!-- Boutons -->
+<div class="btn-area">
+  <button class="btn-roll" id="btnRoll" onclick="rollDice()">🎲 Lancer les dés</button>
+  <button class="btn-next" id="btnNext" onclick="nextPlayer()">↺ Remettre les dés à zéro et passer au prochain joueur</button>
+</div>
+
+<!-- Recommencer -->
+<div class="reset-wrap">
+  <button class="btn-reset" onclick="resetGame()">Recommencer</button>
+</div>
+
+<!-- Joueur fixe -->
+<div class="fixed-player">
+  <span class="fp-label">Tour de</span>
+  <span class="fp-name" id="fixedPlayerName">—</span>
+</div>
+
+<script>
+// ── JOUEURS ────────────────────────────────────────────
+let players = [];
+try { players = JSON.parse(localStorage.getItem('gdb_players') || '[]'); } catch(e) {}
+if (!players.length) players = ['Joueur 1'];
+let currentPlayerIndex = 0;
+
+const currentPlayer = () => players[currentPlayerIndex % players.length];
+
+// ── STATE ──────────────────────────────────────────────
+let hasRolled = false;
+const MAYA_SCORE = 99;
+
+function isMayaRoll(d1, d2) {
+  return (d1 === 5 && d2 === 6) || (d1 === 6 && d2 === 5);
+}
+
+// ── LANCER ────────────────────────────────────────────
+function rollDice() {
+  if (hasRolled) return;
+  document.getElementById('btnRoll').disabled = true;
+
+  let d1, d2;
+  do {
+    d1 = Math.ceil(Math.random() * 6);
+    d2 = Math.ceil(Math.random() * 6);
+  } while (d1 === 6 && d2 === 6);
+  const maya = isMayaRoll(d1, d2);
+
+  const die1El = document.getElementById('die1');
+  const die2El = document.getElementById('die2');
+  die1El.classList.add('rolling');
+  die2El.classList.add('rolling');
+
+  let ticks = 0;
+  const ticker = setInterval(() => {
+    die1El.textContent = Math.ceil(Math.random() * 6);
+    die2El.textContent = Math.ceil(Math.random() * 6);
+    if (++ticks > 12) clearInterval(ticker);
+  }, 40);
+
+  setTimeout(() => {
+    die1El.classList.remove('rolling');
+    die2El.classList.remove('rolling');
+    die1El.textContent = d1;
+    die2El.textContent = d2;
+
+    const scoreEl = document.getElementById('scoreLabel');
+    if (maya) {
+      die1El.classList.add('maya-glow');
+      die2El.classList.add('maya-glow');
+      scoreEl.textContent = 'MAYA ! 🎲';
+      scoreEl.className   = 'score-label is-maya show';
+    } else {
+      const score = Math.max(d1, d2) * 10 + Math.min(d1, d2);
+      scoreEl.textContent = score;
+      scoreEl.className   = 'score-label show';
+    }
+
+    hasRolled = true;
+    document.getElementById('btnNext').classList.add('show');
+  }, 580);
+}
+
+// ── JOUEUR SUIVANT ─────────────────────────────────────
+function nextPlayer() {
+  // Remettre les dés à zéro
+  ['die1','die2'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '<span class="die-placeholder">?</span>';
+    el.className = 'die';
+  });
+  document.getElementById('scoreLabel').className = 'score-label';
+  document.getElementById('btnNext').classList.remove('show');
+  document.getElementById('btnRoll').disabled = false;
+  hasRolled = false;
+
+  // Avancer le joueur
+  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+  document.getElementById('fixedPlayerName').textContent = currentPlayer();
+}
+
+// ── INIT / RESET ───────────────────────────────────────
+function initGame() {
+  hasRolled = false;
+  currentPlayerIndex = 0;
+  ['die1','die2'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '<span class="die-placeholder">?</span>';
+    el.className = 'die';
+  });
+  document.getElementById('scoreLabel').className = 'score-label';
+  document.getElementById('btnNext').classList.remove('show');
+  document.getElementById('btnRoll').disabled = false;
+  document.getElementById('fixedPlayerName').textContent = currentPlayer();
+}
+
+function resetGame() {
+  if (!confirm('Recommencer ?')) return;
+  initGame();
+}
+
+// ── RÈGLES ─────────────────────────────────────────────
+function openRules() {
+  document.getElementById('overlay-rules').classList.add('open');
+}
+function closeRules() {
+  document.getElementById('overlay-rules').classList.remove('open');
+}
+function closeRulesOnBg(e) {
+  if (e.target === document.getElementById('overlay-rules')) closeRules();
+}
+
+// ── BOOT ───────────────────────────────────────────────
+initGame();
+</script>
+</body>
+</html>
