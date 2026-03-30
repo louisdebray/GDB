@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="icon" type="image/png" href="GDB Logo.png">
+<link rel="apple-touch-icon" href="GDB Logo.png">
+<link rel="manifest" href="manifest.json">
+<title>GDB - Le PMU</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0eff8;
+    --muted: rgba(240,239,248,0.4);
+    --hint: rgba(240,239,248,0.15);
+    --c1: #e8c547;
+    --c3: #e03a5a;
+    --c15: #10c97e;
+    --pmu: #10c97e;
+    --red-suit: #e05a5a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; max-width: 430px;
+    margin: 0 auto; padding: 0 0 60px; overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 24px 20px 16px; display: flex;
+    align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: var(--text); }
+  .logo span { color: var(--pmu); }
+  .btn-change-game {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 12px; padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-change-game:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── ERREUR MAX JOUEURS ── */
+  .error-screen {
+    display: none; padding: 48px 20px; text-align: center;
+  }
+  .error-screen.show { display: block; }
+  .error-icon  { font-size: 48px; margin-bottom: 16px; }
+  .error-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; margin-bottom: 8px; color: var(--c3); }
+  .error-sub   { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.5; }
+
+  /* ── SECTIONS ── */
+  .section { padding: 24px 20px 0; }
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* ── PHASE MISE ── */
+  .bet-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; margin-bottom: 10px;
+  }
+  .bet-player-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; margin-bottom: 12px; color: var(--text); }
+  .bet-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .bet-label { font-size: 12px; color: var(--muted); font-weight: 500; min-width: 60px; }
+
+  .horse-btns { display: flex; gap: 6px; flex: 1; }
+  .horse-btn {
+    flex: 1; padding: 10px 6px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+    text-align: center;
+  }
+  .horse-btn.selected-red   { border-color: var(--red-suit); background: rgba(224,90,90,0.14); }
+  .horse-btn.selected-black { border-color: rgba(240,239,248,0.4); background: rgba(240,239,248,0.08); }
+  .horse-btn:disabled { opacity: 0.22; cursor: not-allowed; }
+
+  .sips-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    -webkit-appearance: none; width: 100%;
+  }
+  .sips-input:focus { outline: none; border-color: rgba(16,201,126,0.4); }
+
+  /* ── BTN PRINCIPAL ── */
+  .btn-main {
+    display: block; width: calc(100% - 40px); margin: 20px 20px 0;
+    padding: 17px; border-radius: 16px; border: none;
+    background: var(--pmu); color: #061a0f;
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.06em;
+    cursor: pointer; transition: transform 0.1s, opacity 0.15s;
+  }
+  .btn-main:active   { transform: scale(0.97); }
+  .btn-main:disabled { opacity: 0.35; cursor: default; }
+  .btn-main.secondary {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); font-size: 15px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600;
+  }
+
+  /* ── PISTE ── */
+  .track-wrap { display: none; padding: 0 20px; margin-top: 20px; }
+  .track-wrap.show { display: block; }
+
+  /* Carte jouée - vraie carte */
+  .card-display-area {
+    display: flex; justify-content: center;
+    align-items: center; min-height: 160px; margin-bottom: 16px;
+  }
+  .playing-card {
+    width: 96px; height: 136px; background: #fff;
+    border-radius: 10px; border: 1px solid #ccc;
+    position: relative; display: flex;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    user-select: none;
+  }
+  .playing-card.flip-anim { animation: cardFlip 0.35s ease; }
+  @keyframes cardFlip {
+    0%   { transform: rotateY(0deg);  }
+    40%  { transform: rotateY(90deg); opacity: 0.4; }
+    60%  { transform: rotateY(90deg); opacity: 0.4; }
+    100% { transform: rotateY(0deg);  }
+  }
+  .card-corner {
+    position: absolute; font-size: 13px; font-weight: 800;
+    line-height: 1.15; display: flex; flex-direction: column;
+    align-items: center; font-family: 'DM Sans', sans-serif;
+  }
+  .card-corner.tl { top: 7px; left: 8px; }
+  .card-corner.br { bottom: 7px; right: 8px; transform: rotate(180deg); }
+  .card-center-suit { font-size: 42px; line-height: 1; }
+  .card-placeholder {
+    width: 96px; height: 136px; background: var(--surface2);
+    border-radius: 10px; border: 2px dashed var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--hint); font-size: 28px;
+  }
+
+  /* Obstacle alert */
+  .obstacle-alert {
+    display: none; background: rgba(232,197,71,0.1);
+    border: 1px solid rgba(232,197,71,0.3); border-radius: 12px;
+    padding: 11px 16px; font-size: 13px; font-weight: 500;
+    color: var(--c1); margin-bottom: 12px; text-align: center;
+  }
+  .obstacle-alert.show { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* Piste : column-reverse → lvl-0 en bas (premier DOM), lvl-fin en haut (dernier DOM) */
+  .race-track { display: flex; flex-direction: column-reverse; gap: 6px; position: relative; }
+  .track-level {
+    height: 48px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; display: flex; align-items: center; padding: 0 10px;
+    gap: 6px; position: relative; overflow: visible;
+  }
+
+  /* Slot obstacle intégré dans chaque ligne */
+  .obs-slot {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 8px; border: 1.5px solid var(--border);
+    background: var(--surface2); display: flex; align-items: center;
+    justify-content: center; font-size: 18px; font-family: 'Bebas Neue', sans-serif;
+    color: var(--hint); transition: background 0.3s, border-color 0.3s;
+  }
+  .obs-slot.obs-spacer { border-color: transparent; background: transparent; }
+  .obs-slot.revealed-red   { border-color: var(--red-suit); background: rgba(224,90,90,0.12); color: var(--red-suit); }
+  .obs-slot.revealed-black { border-color: rgba(240,239,248,0.3); background: rgba(240,239,248,0.06); color: var(--text); }
+  .track-level-num { font-size: 11px; color: var(--hint); font-weight: 600; letter-spacing: 0.05em; min-width: 18px; }
+  .track-level.finish { border-color: rgba(16,201,126,0.4); background: rgba(16,201,126,0.06); }
+  .track-level.finish .track-level-num { color: var(--pmu); }
+
+  /* Tokens chevaux */
+  .horse-token {
+    position: absolute; width: 36px; height: 36px; border-radius: 8px;
+    border: 2px solid var(--border); background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    top: 6px; transition: none; pointer-events: none;
+  }
+  .horse-token.red-horse   { border-color: rgba(224,90,90,0.6); color: var(--red-suit); }
+  .horse-token.black-horse { border-color: rgba(240,239,248,0.25); color: var(--text); }
+  .horse-token.finished    { opacity: 0.45; }
+
+  /* Classement */
+  .ranking { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .rank-badge {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 10px; font-size: 13px; font-weight: 600;
+  }
+  .rank-badge .rank-pos { color: var(--muted); font-size: 11px; }
+
+  /* ── PHASE RÉSULTATS ── */
+  .result-screen { display: none; padding: 0 20px; margin-top: 24px; }
+  .result-screen.show { display: block; }
+  .result-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--pmu); margin-bottom: 16px; }
+  .result-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .result-item.win  { border-color: rgba(16,201,126,0.35); background: rgba(16,201,126,0.05); }
+  .result-item.lose { border-color: rgba(224,58,90,0.3);   background: rgba(224,58,90,0.05); }
+  .result-player { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+  .result-detail { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .result-sips   { font-family: 'Bebas Neue', sans-serif; font-size: 28px; }
+  .result-sips.win-sips  { color: var(--pmu); }
+  .result-sips.lose-sips { color: var(--c3); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: 500;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; white-space: nowrap; z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">LE <span>PMU</span></div>
+  <button class="btn-change-game" onclick="window.location.href='index.html'">Changer de jeu</button>
+</header>
+
+<!-- Erreur max joueurs -->
+<div class="error-screen" id="errorScreen">
+  <div class="error-icon">🏇</div>
+  <div class="error-title">4 joueurs maximum</div>
+  <div class="error-sub">Le PMU ne peut accueillir que 4 joueurs.<br>Retourne à l'accueil pour ajuster la liste.</div>
+  <button class="btn-main" onclick="window.location.href='index.html'" style="margin: 0 auto">← Retour</button>
+</div>
+
+<!-- ══ PHASE 1 : MISES ══ -->
+<div id="phaseBets">
+  <div class="section">
+    <div class="section-title">Placer vos mises</div>
+    <div id="betsList"></div>
+  </div>
+  <button class="btn-main" id="btnLaunch" onclick="launchRace()">🏇 Lancer la course !</button>
+</div>
+
+<!-- ══ PHASE 2 : COURSE ══ -->
+<div class="track-wrap" id="phaseRace">
+
+  <!-- Carte retournée -->
+  <div class="card-display-area">
+    <div class="card-placeholder" id="cardPlaceholder">🃏</div>
+    <div class="playing-card" id="playingCard" style="display:none">
+      <div class="card-corner tl" id="cardCornerTL"></div>
+      <div class="card-center-suit" id="cardCenter"></div>
+      <div class="card-corner br" id="cardCornerBR"></div>
+    </div>
+  </div>
+
+  <div class="obstacle-alert" id="obstacleAlert"></div>
+
+  <div class="race-track" id="raceTrack"></div>
+
+  <div style="margin-top:14px">
+    <div class="section-title" style="padding:0 0 8px">Classement en cours</div>
+    <div class="ranking" id="rankingDisplay"></div>
+  </div>
+
+  <button class="btn-main" id="btnDraw" onclick="drawCard()" style="margin-top:20px">🃏 Retourner une carte</button>
+  <button onclick="if(confirm('Recommencer la partie ?')) window.location.reload()" style="display:block;width:100%;margin-top:48px;padding:12px;border-radius:14px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer">Recommencer une partie</button>
+</div>
+
+<!-- ══ PHASE 3 : RÉSULTATS ══ -->
+<div class="result-screen" id="phaseResult">
+  <div class="result-title">🏆 Résultats de la course</div>
+  <div id="resultList"></div>
+  <button class="btn-main" style="margin:20px 0 0;width:100%" onclick="resetAll()">🔄 Nouvelle course</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUITS     = ['♥','♦','♠','♣'];
+const VALUES    = [2,3,4,5,6,7,8,9,10,11,12,13];
+const VL        = {11:'V',12:'D',13:'R'};
+const vl        = v => VL[v] || String(v);
+const isRed     = s => s === '♥' || s === '♦';
+const suitColor = s => isRed(s) ? '#e05a5a' : '#1a1a1a'; // pour cartes blanches
+const suitColorDark = s => isRed(s) ? 'var(--red-suit)' : 'var(--text)'; // pour UI sombre
+const LEVELS    = 5;
+
+// ── JOUEURS ────────────────────────────────────────────
+let players = [];
+try { players = JSON.parse(localStorage.getItem('gdb_players') || '[]'); } catch(e) {}
+if (!players.length) players = ['Joueur 1'];
+
+// ── MAX 4 JOUEURS ──────────────────────────────────────
+if (players.length > 4) {
+  document.getElementById('phaseBets').style.display = 'none';
+  document.getElementById('errorScreen').classList.add('show');
+}
+
+// ── STATE ──────────────────────────────────────────────
+let deck = [], obstacles = [], bets = [];
+let horsePos = {}, ranking = [];
+let obstaclesRevealed = [false,false,false,false,false];
+let selectedSuits = {}; // { playerIndex: suit }
+
+// ── DECK ──────────────────────────────────────────────
+function makeDeck() {
+  const d = [];
+  for (const s of SUITS) for (const v of VALUES) d.push({suit:s, val:v});
+  return shuffle(d);
+}
+function shuffle(a) {
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+// ── PHASE 1 : MISES ───────────────────────────────────
+function buildBetsUI() {
+  if (players.length > 4) return;
+  const list = document.getElementById('betsList');
+  list.innerHTML = '';
+  players.forEach((name, pi) => {
+    list.innerHTML += `
+      <div class="bet-card">
+        <div class="bet-player-name">${name}</div>
+        <div class="bet-row">
+          <span class="bet-label">Cheval</span>
+          <div class="horse-btns">
+            ${SUITS.map(s => `
+              <button class="horse-btn" id="hbtn-${pi}-${s}"
+                onclick="selectHorse(${pi},'${s}')"
+                style="color:${suitColorDark(s)}">${s}</button>
+            `).join('')}
+          </div>
+        </div>
+        <div class="bet-row">
+          <span class="bet-label">Gorgées</span>
+          <input class="sips-input" id="sips-${pi}" type="number" min="1" value="3">
+        </div>
+      </div>`;
+  });
+  selectedSuits = {};
+}
+
+function selectHorse(pi, suit) {
+  const prev = selectedSuits[pi];
+
+  // Si ce signe est pris par un autre joueur, bloquer
+  const takenBy = Object.entries(selectedSuits).find(([idx, s]) => s === suit && parseInt(idx) !== pi);
+  if (takenBy) return;
+
+  // Dégrisé l'ancien signe pour les autres joueurs
+  if (prev && prev !== suit) {
+    players.forEach((_, oi) => {
+      if (oi === pi) return;
+      const btn = document.getElementById(`hbtn-${oi}-${prev}`);
+      if (btn) btn.disabled = false;
+    });
+  }
+
+  selectedSuits[pi] = suit;
+
+  // Mettre à jour les boutons de CE joueur
+  SUITS.forEach(s => {
+    const btn = document.getElementById(`hbtn-${pi}-${s}`);
+    if (btn) btn.className = `horse-btn`;
+    if (btn) btn.style.color = suitColorDark(s);
+  });
+  const chosen = document.getElementById(`hbtn-${pi}-${suit}`);
+  if (chosen) chosen.classList.add(isRed(suit) ? 'selected-red' : 'selected-black');
+
+  // Griser ce signe pour les autres joueurs
+  players.forEach((_, oi) => {
+    if (oi === pi) return;
+    const btn = document.getElementById(`hbtn-${oi}-${suit}`);
+    if (btn) btn.disabled = true;
+  });
+}
+
+function launchRace() {
+  bets = [];
+  for (let pi = 0; pi < players.length; pi++) {
+    const suit = selectedSuits[pi];
+    if (!suit) { showToast(`${players[pi]} : choisis un cheval !`); return; }
+    const sips = Math.max(1, parseInt(document.getElementById(`sips-${pi}`).value) || 1);
+    bets.push({ player: players[pi], suit, sips });
+  }
+
+  const full = makeDeck();
+  obstacles = full.splice(0, LEVELS);
+  deck      = full;
+  horsePos  = {'♥':0,'♦':0,'♠':0,'♣':0};
+  ranking   = [];
+  obstaclesRevealed = [false,false,false,false,false];
+
+  document.getElementById('phaseBets').style.display = 'none';
+  buildTrackUI();
+  document.getElementById('phaseRace').classList.add('show');
+}
+
+// ── PISTE ─────────────────────────────────────────────
+function buildTrackUI() {
+  // Chaque ligne embarque son propre obs-slot :
+  // lvl-0 et lvl-fin ont un spacer transparent, lvl-1..5 ont le vrai slot obstacle.
+  const track = document.getElementById('raceTrack');
+  track.innerHTML = '';
+  track.innerHTML += `<div class="track-level" id="lvl-0"><div class="obs-slot obs-spacer"></div><span class="track-level-num" style="color:var(--muted)">▶</span></div>`;
+  for (let lvl = 1; lvl <= LEVELS; lvl++) {
+    track.innerHTML += `<div class="track-level" id="lvl-${lvl}"><div class="obs-slot" id="obs-${lvl}">?</div><span class="track-level-num">${lvl}</span></div>`;
+  }
+  track.innerHTML += `<div class="track-level finish" id="lvl-fin"><div class="obs-slot obs-spacer"></div><span class="track-level-num">🏁</span></div>`;
+
+  // Placer les chevaux au départ
+  SUITS.forEach(s => placeHorse(s));
+  updateRankingDisplay();
+}
+
+function getTrackLevelEl(pos) {
+  if (pos >= LEVELS + 1) return document.getElementById('lvl-fin');
+  if (pos < 0) ensureNegativeLevel(pos);
+  return document.getElementById(`lvl-${pos}`);
+}
+
+// Crée dynamiquement un niveau négatif et l'insère au bon endroit dans le DOM.
+// Avec column-reverse, "avant lvl-(pos+1) dans le DOM" = visuellement sous lui. ✓
+function ensureNegativeLevel(pos) {
+  if (document.getElementById(`lvl-${pos}`)) return;
+  // S'assurer que tous les niveaux entre pos+1 et 0 existent d'abord
+  for (let p = -1; p >= pos; p--) {
+    if (document.getElementById(`lvl-${p}`)) continue;
+    const track   = document.getElementById('raceTrack');
+    const levelEl = document.createElement('div');
+    levelEl.className  = 'track-level';
+    levelEl.id         = `lvl-${p}`;
+    levelEl.style.overflow = 'visible';
+    levelEl.style.borderColor = 'rgba(224,58,90,0.25)';
+    levelEl.innerHTML  = `<div class="obs-slot obs-spacer"></div><span class="track-level-num" style="color:rgba(224,58,90,0.6)">${p}</span>`;
+    // Insérer avant l'élément d'un niveau au-dessus (p+1)
+    const refEl = document.getElementById(`lvl-${p + 1}`);
+    track.insertBefore(levelEl, refEl);
+  }
+}
+
+function placeHorse(suit) {
+  const old = document.getElementById(`horse-${suit}`);
+  if (old) old.remove();
+
+  const pos     = horsePos[suit];
+  const levelEl = getTrackLevelEl(pos);
+  if (!levelEl) return;
+
+  const idx   = SUITS.indexOf(suit);
+  const token = document.createElement('div');
+  token.className = 'horse-token ' + (isRed(suit) ? 'red-horse' : 'black-horse');
+  token.id        = `horse-${suit}`;
+  token.textContent = suit;
+
+  // Décalage depuis le bord gauche du track-level :
+  // 10px padding + 36px obs-slot + 6px gap + 18px level-num + 6px marge = ~76px pour le premier cheval
+  const offsets = [76, 112, 148, 184];
+  token.style.left = offsets[idx] + 'px';
+  token.style.top  = '6px';
+
+  levelEl.style.overflow = 'visible';
+  levelEl.appendChild(token);
+
+  if (ranking.includes(suit)) token.classList.add('finished');
+}
+
+// ── TIRER UNE CARTE ───────────────────────────────────
+function drawCard() {
+  if (!deck.length) { showToast('Plus de cartes !'); return; }
+  const card = deck.pop();
+  const suit = card.suit;
+  const red  = isRed(suit);
+  const col  = suitColor(suit); // couleur pour carte blanche
+
+  // Afficher la vraie carte avec animation flip
+  const placeholder = document.getElementById('cardPlaceholder');
+  const pc          = document.getElementById('playingCard');
+  placeholder.style.display = 'none';
+  pc.style.display  = 'flex';
+  pc.classList.remove('flip-anim');
+  void pc.offsetWidth;
+  pc.classList.add('flip-anim');
+  pc.querySelector('#cardCornerTL').innerHTML  = `<span style="color:${col}">${vl(card.val)}</span><span style="color:${col}">${suit}</span>`;
+  pc.querySelector('#cardCenter').textContent  = suit;
+  pc.querySelector('#cardCenter').style.color  = col;
+  pc.querySelector('#cardCornerBR').innerHTML  = `<span style="color:${col}">${vl(card.val)}</span><span style="color:${col}">${suit}</span>`;
+
+  // Avancer le cheval
+  if (!ranking.includes(suit)) {
+    horsePos[suit] = Math.min(horsePos[suit] + 1, LEVELS + 1);
+    placeHorse(suit);
+
+    if (horsePos[suit] >= LEVELS + 1 && !ranking.includes(suit)) {
+      ranking.push(suit);
+      showToast(`${suit} arrive ${ordinal(ranking.length)} !`);
+      placeHorse(suit);
+    }
+  }
+
+  // Obstacles : se déclenche dès qu'UN cheval atteint ce niveau
+  checkObstacles();
+  updateRankingDisplay();
+
+  if (ranking.length === 4) {
+    setTimeout(endRace, 900);
+  } else if (!deck.length) {
+    // Plus de cartes : fin par positions
+    document.getElementById('btnDraw').disabled = true;
+    showToast('Plus de cartes — fin de course !');
+    const remaining = SUITS.filter(s => !ranking.includes(s))
+      .sort((a, b) => horsePos[b] - horsePos[a]);
+    remaining.forEach(s => ranking.push(s));
+    setTimeout(endRace, 1400);
+  }
+}
+
+function ordinal(n) { return n === 1 ? '1er 🏆' : n + 'ème'; }
+
+// ── OBSTACLES : niveaux de déclenchement 2, 3, 4, 5, finish (6) ──
+// obstacles[0] → lvl 2 | obstacles[1] → lvl 3 | ... | obstacles[4] → finish
+const OBSTACLE_TRIGGERS = [1, 2, 3, 4, 5];
+
+function checkObstacles() {
+  for (let i = 0; i < LEVELS; i++) {
+    if (obstaclesRevealed[i]) continue;
+    if (SUITS.some(s => horsePos[s] >= OBSTACLE_TRIGGERS[i])) revealObstacle(i);
+  }
+}
+
+function revealObstacle(i) {
+  obstaclesRevealed[i] = true;
+  const card  = obstacles[i];
+  const suit  = card.suit;
+  const obsEl = document.getElementById(`obs-${i + 1}`);
+  obsEl.textContent = suit;
+  obsEl.classList.add(isRed(suit) ? 'revealed-red' : 'revealed-black');
+
+  if (!ranking.includes(suit)) {
+    horsePos[suit] = horsePos[suit] - 1;
+    placeHorse(suit);
+    const lvlLabel = OBSTACLE_TRIGGERS[i] > LEVELS ? 'finish' : String(OBSTACLE_TRIGGERS[i]);
+    const alert = document.getElementById('obstacleAlert');
+    alert.textContent = `⚠️ Obstacle niveau ${lvlLabel} : ${suit} recule !`;
+    alert.classList.add('show');
+    setTimeout(() => alert.classList.remove('show'), 2500);
+  }
+}
+
+function updateRankingDisplay() {
+  const el = document.getElementById('rankingDisplay');
+  if (!ranking.length) {
+    el.innerHTML = '<span style="font-size:12px;color:var(--muted)">En attente…</span>';
+    return;
+  }
+  el.innerHTML = ranking.map((s,i) => `
+    <div class="rank-badge">
+      <span class="rank-pos">${i+1}${i===0?'er':'ème'}</span>
+      <span style="color:${suitColorDark(s)}">${s}</span>
+    </div>`).join('');
+  const remaining = SUITS.filter(s => !ranking.includes(s)).sort((a,b) => horsePos[b]-horsePos[a]);
+  el.innerHTML += remaining.map(s => `
+    <div class="rank-badge" style="opacity:0.5">
+      <span style="color:${suitColorDark(s)}">${s}</span>
+      <span class="rank-pos">niv.${horsePos[s]}</span>
+    </div>`).join('');
+}
+
+// ── FIN DE COURSE ─────────────────────────────────────
+function endRace() {
+  document.getElementById('phaseRace').classList.remove('show');
+  SUITS.forEach(s => { if (!ranking.includes(s)) ranking.push(s); });
+  buildResultUI();
+  document.getElementById('phaseResult').classList.add('show');
+}
+
+function buildResultUI() {
+  const list = document.getElementById('resultList');
+  list.innerHTML = '';
+  bets.forEach(bet => {
+    const pos      = ranking.indexOf(bet.suit) + 1;
+    const win      = pos === 1;
+    const sipsShow = win ? bet.sips * 2 : bet.sips;
+    list.innerHTML += `
+      <div class="result-item ${win ? 'win' : 'lose'}">
+        <div>
+          <div class="result-player">${bet.player}</div>
+          <div class="result-detail">
+            <span style="color:${suitColorDark(bet.suit)}">${bet.suit}</span> · ${ordinal(pos)}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="result-sips ${win ? 'win-sips' : 'lose-sips'}">${sipsShow}g</div>
+          <div style="font-size:11px;color:var(--muted)">${win ? 'à distribuer 🎉 (×2)' : 'à boire 😵'}</div>
+        </div>
+      </div>`;
+  });
+}
+
+// ── RESET ──────────────────────────────────────────────
+function resetAll() {
+  document.getElementById('phaseResult').classList.remove('show');
+  document.getElementById('phaseRace').classList.remove('show');
+  document.getElementById('btnDraw').disabled = false;
+  document.getElementById('cardPlaceholder').style.display = 'flex';
+  document.getElementById('playingCard').style.display    = 'none';
+  document.getElementById('obstacleAlert').classList.remove('show');
+  document.getElementById('rankingDisplay').innerHTML = '';
+  document.getElementById('raceTrack').innerHTML      = '';
+  document.getElementById('phaseBets').style.display  = 'block';
+  buildBetsUI();
+}
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── BOOT ───────────────────────────────────────────────
+if (players.length <= 4) buildBetsUI();
+</script>
+</body>
+</html>
