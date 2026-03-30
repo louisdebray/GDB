@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="icon" type="image/png" href="GDB Logo.png">
+<title>GDB - Le Purple</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0eff8;
+    --muted: rgba(240,239,248,0.4);
+    --hint: rgba(240,239,248,0.15);
+    --c1: #e8c547;
+    --c2: #f07d3a;
+    --c3: #e03a5a;
+    --c5: #9b5cf6;
+    --c10: #3b82f6;
+    --c15: #10c97e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 0 160px;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 24px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    color: var(--c5);
+  }
+  .btn-change-game {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-change-game:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* ── DECK INFO ── */
+  .deck-info {
+    padding: 12px 20px 0;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── STEP DOTS ── */
+  .step-bar {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px 0;
+  }
+  .step-dot {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    transition: background 0.3s;
+  }
+  .step-dot.active { background: var(--c5); }
+  .step-dot.done   { background: color-mix(in srgb, var(--c5) 40%, transparent); }
+
+  /* ── TABLE ── */
+  .table-area { padding: 20px 20px 0; }
+  .table-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .table-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+  .table-card {
+    width: 52px;
+    height: 76px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+  .tc-suit { font-size: 18px; line-height: 1; }
+  .tc-val  { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--muted); line-height: 1; }
+
+  /* ── QUESTION AREA ── */
+  .question-area { padding: 24px 20px 0; }
+  .q-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .q-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.03em;
+    line-height: 1.25;
+    margin-bottom: 20px;
+  }
+
+  /* ── CHOICE BUTTONS ── */
+  .choices      { display: flex; flex-direction: column; gap: 10px; }
+  .choices.row  { flex-direction: row; }
+  .choices.wrap { flex-direction: row; flex-wrap: wrap; }
+
+  .cbtn {
+    flex: 1;
+    padding: 18px 12px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s, border-color 0.15s;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cbtn:active { transform: scale(0.96); }
+
+  .cbtn-rouge  { border-color: rgba(224,90,90,0.45);  color: #e05a5a; }
+  .cbtn-rouge:active  { background: color-mix(in srgb,#e05a5a 12%,var(--surface)); }
+  .cbtn-noir   { border-color: rgba(255,255,255,0.12); }
+  .cbtn-noir:active   { background: color-mix(in srgb,var(--text) 6%,var(--surface)); }
+  .cbtn-purple { border-color: rgba(155,92,246,0.45); color: var(--c5); }
+  .cbtn-purple:active { background: color-mix(in srgb,var(--c5) 12%,var(--surface)); }
+  .cbtn-plus   { border-color: rgba(16,201,126,0.45); color: var(--c15); }
+  .cbtn-plus:active   { background: color-mix(in srgb,var(--c15) 12%,var(--surface)); }
+  .cbtn-minus  { border-color: rgba(224,58,90,0.45);  color: var(--c3); }
+  .cbtn-minus:active  { background: color-mix(in srgb,var(--c3) 12%,var(--surface)); }
+  .cbtn-in     { border-color: rgba(59,130,246,0.45); color: var(--c10); }
+  .cbtn-in:active     { background: color-mix(in srgb,var(--c10) 12%,var(--surface)); }
+  .cbtn-out    { border-color: rgba(232,197,71,0.45); color: var(--c1); }
+  .cbtn-out:active    { background: color-mix(in srgb,var(--c1) 12%,var(--surface)); }
+  .cbtn-suit { font-size: 24px; padding: 16px 8px; }
+
+  /* ── RESULT AREA ── */
+  .result-area { padding: 24px 20px 0; text-align: center; }
+  .result-cards { display: flex; justify-content: center; gap: 12px; margin-bottom: 18px; }
+  .result-card {
+    width: 72px;
+    height: 108px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    animation: cardIn 0.3s ease;
+  }
+  @keyframes cardIn { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .rc-suit { font-size: 28px; line-height: 1; }
+  .rc-val  { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--muted); line-height: 1; }
+  .result-verdict {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .result-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.4; }
+  .btn-next {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .btn-next:active { transform: scale(0.96); }
+
+  /* ── FIXED PLAYER ── */
+  .fixed-player {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 10px 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .fp-label { color: var(--muted); font-size: 12px; }
+  .fp-name  { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); line-height: 1; }
+
+  /* ── BANK PILL ── */
+  .bank-pill {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid rgba(155,92,246,0.35);
+    border-radius: 28px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+  }
+  .bank-lbl   { color: var(--muted); font-size: 13px; }
+  .bank-count {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--c5);
+    line-height: 1;
+  }
+  .bank-count.bump { animation: bump 0.3s ease; }
+  @keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+  /* ── OVERLAYS ── */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:flex-end; }
+  .overlay.open { display:flex; animation:fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .sheet {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 20px 20px 40px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .sheet-handle { width:36px; height:4px; background:var(--hint); border-radius:2px; margin:0 auto 20px; }
+
+  /* Drink sheet */
+  .drink-name   { text-align:center; font-size:18px; font-weight:600; color:var(--text); margin-bottom:4px; }
+  .drink-amount { font-family:'Bebas Neue',sans-serif; font-size:72px; line-height:1; text-align:center; color:var(--c3); margin-bottom:4px; }
+  .drink-sub    { text-align:center; font-size:14px; color:var(--muted); margin-bottom:32px; }
+  .btn-done {
+    width:100%; padding:16px; border-radius:14px; border:none;
+    background:var(--c15); color:#0a2e1e;
+    font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
+    transition:transform 0.1s;
+  }
+  .btn-done:active { transform:scale(0.96); }
+
+  /* Next player sheet */
+  .next-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 34px;
+    text-align: center;
+    color: var(--c5);
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .next-sub { text-align:center; font-size:13px; color:var(--muted); margin-bottom:28px; line-height:1.5; }
+  .btn-go {
+    width:100%; padding:16px; border-radius:14px; border:none;
+    background:var(--c5); color:#fff;
+    font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer;
+    transition:transform 0.1s;
+  }
+  .btn-go:active { transform:scale(0.96); }
+
+  /* Toast */
+  .toast {
+    position:fixed; bottom:90px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--surface2); border:1px solid var(--border); border-radius:20px;
+    padding:10px 20px; font-size:14px; font-weight:500;
+    opacity:0; transition:opacity 0.3s,transform 0.3s;
+    pointer-events:none; white-space:nowrap; z-index:200;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Reset */
+  .reset-wrap { padding:24px 20px 0; text-align:center; }
+  .btn-reset {
+    background:none; border:1px solid var(--border); color:var(--muted);
+    border-radius:12px; padding:10px 24px;
+    font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer;
+    transition:border-color 0.2s,color 0.2s;
+  }
+  .btn-reset:hover { border-color:rgba(255,255,255,0.2); color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span style="color:var(--text)">LE </span><span style="color:#9b5cf6">PURPLE</span></div>
+  <button class="btn-change-game" onclick="window.location.href='index.html'">Changer de jeu</button>
+</header>
+
+<div class="deck-info" id="deckInfo">52 cartes restantes</div>
+
+<div class="step-bar">
+  <div class="step-dot" id="dot-1"></div>
+  <div class="step-dot" id="dot-2"></div>
+  <div class="step-dot" id="dot-3"></div>
+</div>
+
+<div class="table-area" id="tableArea" style="display:none">
+  <div class="table-label">Sur la table</div>
+  <div class="table-cards" id="tableCards"></div>
+</div>
+
+<div class="question-area" id="questionArea"></div>
+<div class="result-area"   id="resultArea"   style="display:none"></div>
+
+<div class="reset-wrap">
+  <button class="btn-reset" onclick="resetGame()">Nouvelle partie</button>
+</div>
+
+<!-- Joueur fixe -->
+<div class="fixed-player">
+  <span class="fp-label">Tour de</span>
+  <span class="fp-name" id="fixedPlayerName">—</span>
+</div>
+
+<!-- Banque fixe -->
+<div class="bank-pill">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M7 1.5C7 1.5 2 5 2 8.5a5 5 0 0 0 10 0C12 5 7 1.5 7 1.5Z"
+      stroke="rgba(155,92,246,0.8)" stroke-width="1.2" fill="rgba(155,92,246,0.15)"/>
+  </svg>
+  <span class="bank-lbl">Banque</span>
+  <span class="bank-count" id="bankCount">0</span>
+  <span class="bank-lbl">g</span>
+</div>
+
+<!-- Sheet : boire -->
+<div class="overlay" id="overlay-drink">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="drink-name"   id="drinkName"></div>
+    <div class="drink-amount" id="drinkAmount"></div>
+    <div class="drink-sub"    id="drinkSub">gorgées à boire 🍺</div>
+    <button class="btn-done" onclick="confirmDrink()">C'est fait ✓</button>
+  </div>
+</div>
+
+<!-- Sheet : joueur suivant -->
+<div class="overlay" id="overlay-next">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="next-headline" id="nextHeadline"></div>
+    <div class="next-sub"      id="nextSub"></div>
+    <button class="btn-go" onclick="confirmNextPlayer()">C'est parti ! 🎲</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTES ────────────────────────────────────────
+const SUITS  = ['♥','♦','♠','♣'];
+const VALUES = [1,2,3,4,5,6,7,8,9,10,11,12,13];
+const VL     = {1:'A',11:'V',12:'D',13:'R'};
+
+const vl  = v => VL[v] || String(v);
+const red = s => s === '♥' || s === '♦';
+const sc  = s => red(s) ? '#e05a5a' : 'var(--text)';
+
+// ── DECK ──────────────────────────────────────────────
+function makeDeck() {
+  const d = [];
+  for (const s of SUITS) for (const v of VALUES) d.push({suit:s, val:v, red:red(s)});
+  return shuffle(d);
+}
+function shuffle(a) {
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ── STATE ─────────────────────────────────────────────
+// bank = bankCarry + tourCards.length  (dérivé, jamais stocké séparément)
+// step = dérivé de tourCards.length
+// streak = tourCards.length
+
+let deck        = [];
+let bankCarry   = 0;   // gorgées portées depuis les passes précédentes
+let tourCards   = [];  // cartes sur la table ce sous-tour
+let players     = [], currentPlayerIndex = 0;
+
+// ── DÉRIVÉS ───────────────────────────────────────────
+const bankTotal    = ()  => bankCarry + tourCards.length;
+const currentStep  = ()  => tourCards.length === 0 ? 1
+                           : tourCards.length === 1 ? 2
+                           : 3;
+
+// ── JOUEURS ───────────────────────────────────────────
+function loadPlayers() {
+  try { players = JSON.parse(localStorage.getItem('gdb_players') || '[]'); } catch(e) {}
+  if (!players.length) players = ['Joueur 1'];
+}
+const currentPlayer = () => players[currentPlayerIndex % players.length];
+function advancePlayer() {
+  currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+  document.getElementById('fixedPlayerName').textContent = currentPlayer();
+}
+
+// ── INIT ──────────────────────────────────────────────
+function initGame() {
+  deck = makeDeck();
+  bankCarry = 0; tourCards = []; currentPlayerIndex = 0;
+  updateBank();
+  document.getElementById('fixedPlayerName').textContent = currentPlayer();
+  renderTable();
+  renderQuestion();
+  updateDeckInfo();
+}
+function resetGame() {
+  if (!confirm('Recommencer la partie ?')) return;
+  initGame();
+}
+
+// ── DECK UTILS ────────────────────────────────────────
+function drawCard() {
+  if (!deck.length) deck = makeDeck();
+  return deck.pop();
+}
+function returnToDeck(cards) { deck.push(...cards); shuffle(deck); }
+function updateDeckInfo() {
+  document.getElementById('deckInfo').textContent = deck.length + ' cartes restantes';
+}
+
+// ── BANK ──────────────────────────────────────────────
+// Toujours appelé après avoir modifié tourCards ou bankCarry
+function updateBank() {
+  const el = document.getElementById('bankCount');
+  el.textContent = bankTotal();
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+// ── STEP DOTS ─────────────────────────────────────────
+function renderStepDots() {
+  const s = currentStep();
+  for (let i = 1; i <= 3; i++) {
+    const d = document.getElementById('dot-'+i);
+    d.className = 'step-dot' + (i < s ? ' done' : i === s ? ' active' : '');
+  }
+}
+
+// ── TABLE ─────────────────────────────────────────────
+function renderTable() {
+  const area  = document.getElementById('tableArea');
+  const cards = document.getElementById('tableCards');
+  if (!tourCards.length) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  cards.innerHTML = tourCards.map(c => `
+    <div class="table-card">
+      <div class="tc-suit" style="color:${sc(c.suit)}">${c.suit}</div>
+      <div class="tc-val">${vl(c.val)}</div>
+    </div>`).join('');
+}
+
+// ── QUESTIONS ─────────────────────────────────────────
+const Q_LABELS = ['','Question 1 / 3','Question 2 / 3','Question 3 / 3'];
+
+function renderQuestion() {
+  renderStepDots();
+  document.getElementById('resultArea').style.display = 'none';
+  const qa = document.getElementById('questionArea');
+  const s  = currentStep();
+
+  if (s === 1) {
+    qa.innerHTML = `
+      <div class="q-label">${Q_LABELS[1]}</div>
+      <div class="q-text">Rouge, Noir ou Purple ?</div>
+      <div class="choices">
+        <button class="cbtn cbtn-rouge"  onclick="answer('rouge')">🔴&nbsp; Rouge</button>
+        <button class="cbtn cbtn-noir"   onclick="answer('noir')">⚫&nbsp; Noir</button>
+        <button class="cbtn cbtn-purple" onclick="answer('purple')">🟣&nbsp; Purple</button>
+      </div>`;
+
+  } else if (s === 2) {
+    const ref = tourCards[tourCards.length-1];
+    qa.innerHTML = `
+      <div class="q-label">${Q_LABELS[2]}</div>
+      <div class="q-text">Plus ou Moins que le&nbsp;<span style="color:${sc(ref.suit)}">${ref.suit}</span>&nbsp;${vl(ref.val)}&nbsp;?</div>
+      <div class="choices row">
+        <button class="cbtn cbtn-plus"  onclick="answer('plus')">▲&nbsp; Plus</button>
+        <button class="cbtn cbtn-minus" onclick="answer('moins')">▼&nbsp; Moins</button>
+      </div>`;
+
+  } else { // s === 3
+    const a  = tourCards[0];
+    const b  = tourCards[tourCards.length-1];
+    const lo = Math.min(a.val, b.val);
+    const hi = Math.max(a.val, b.val);
+    qa.innerHTML = `
+      <div class="q-label">${Q_LABELS[3]}</div>
+      <div class="q-text">Intérieur ou Extérieur ?<br>
+        <span style="font-size:16px;color:var(--muted)">[ ${vl(lo)} — ${vl(hi)} ]</span>
+      </div>
+      <div class="choices row">
+        <button class="cbtn cbtn-in"  onclick="answer('interieur')">↔&nbsp; Intérieur</button>
+        <button class="cbtn cbtn-out" onclick="answer('exterieur')">↕&nbsp; Extérieur</button>
+      </div>`;
+  }
+}
+
+// ── ANSWER ────────────────────────────────────────────
+function answer(choice) {
+  let drawn = [], correct = false, mult = 1;
+  const s = currentStep();
+
+  if (s === 1) {
+    if (choice === 'purple') {
+      const c1 = drawCard(), c2 = drawCard();
+      drawn   = [c1, c2];
+      correct = c1.red !== c2.red; // 1 rouge + 1 noire
+    } else {
+      const c = drawCard();
+      drawn   = [c];
+      correct = choice === 'rouge' ? c.red : !c.red;
+    }
+
+  } else if (s === 2) {
+    const c   = drawCard();
+    drawn     = [c];
+    const ref = tourCards[tourCards.length-1];
+    if (c.val === ref.val) {
+      correct = false;
+      mult    = c.red === ref.red ? 4 : 2;
+    } else {
+      correct = choice === 'plus' ? c.val > ref.val : c.val < ref.val;
+    }
+
+  } else { // s === 3
+    const c    = drawCard();
+    drawn      = [c];
+    const ref1 = tourCards[0];
+    const ref2 = tourCards[tourCards.length-1];
+    const lo   = Math.min(ref1.val, ref2.val);
+    const hi   = Math.max(ref1.val, ref2.val);
+    if (c.val === lo || c.val === hi) {
+      correct        = false;
+      const tied     = c.val === ref1.val ? ref1 : ref2;
+      mult           = c.red === tied.red ? 4 : 2;
+    } else {
+      const inside   = c.val > lo && c.val < hi;
+      correct        = choice === 'interieur' ? inside : !inside;
+    }
+  }
+
+  updateDeckInfo();
+  processResult(drawn, correct, mult);
+}
+
+// ── PROCESS RESULT ────────────────────────────────────
+function processResult(drawn, correct, mult) {
+  document.getElementById('questionArea').innerHTML = '';
+  const ra = document.getElementById('resultArea');
+  ra.style.display = 'block';
+
+  const cardsHtml = drawn.map(c => `
+    <div class="result-card">
+      <div class="rc-suit" style="color:${sc(c.suit)}">${c.suit}</div>
+      <div class="rc-val">${vl(c.val)}</div>
+    </div>`).join('');
+
+  if (correct) {
+    // Ajouter les cartes tirées à la table
+    drawn.forEach(c => tourCards.push(c));
+    // bank = bankCarry + tourCards.length (mise à jour automatique)
+    updateBank();
+    renderTable();
+
+    const nowOnTable = tourCards.length;
+
+    if (nowOnTable === 3) {
+      // 3 bonnes réponses → fin de tour, passage automatique
+      ra.innerHTML = `
+        <div class="result-cards">${cardsHtml}</div>
+        <div class="result-verdict" style="color:var(--c15)">Correct ✓</div>
+        <div class="result-sub">3/3 réussies ! Banque : ${bankTotal()}g</div>`;
+      setTimeout(() => showNextPlayerSheet(), 900);
+    } else {
+      // Continuer avec la question suivante
+      ra.innerHTML = `
+        <div class="result-cards">${cardsHtml}</div>
+        <div class="result-verdict" style="color:var(--c15)">Correct ✓</div>
+        <div class="result-sub">Banque : ${bankTotal()}g (${nowOnTable} carte${nowOnTable > 1 ? 's' : ''} sur la table)</div>
+        <button class="btn-next" onclick="renderQuestion()">Question suivante →</button>`;
+    }
+
+  } else {
+    // Raté : total = table actuelle × mult + cartes tirées
+    // (mult > 1 seulement sur égalité, s'applique aux cartes déjà sur la table)
+    const tableCount = tourCards.length;
+    const drawnCount = drawn.length;
+    const total      = tableCount * mult + drawnCount + bankCarry;
+    const multNote   = mult > 1 ? ` · Égalité ×${mult} !` : '';
+
+    ra.innerHTML = `
+      <div class="result-cards">${cardsHtml}</div>
+      <div class="result-verdict" style="color:var(--c3)">Raté ✗</div>
+      <div class="result-sub">${currentPlayer()} boit ${total}g${multNote}</div>`;
+
+    // Remettre toutes les cartes dans le deck
+    returnToDeck([...tourCards, ...drawn]);
+    tourCards = [];
+    renderTable();
+    updateDeckInfo();
+
+    setTimeout(() => openDrinkSheet(total, mult), 800);
+  }
+}
+
+// ── NEXT PLAYER SHEET ─────────────────────────────────
+function showNextPlayerSheet() {
+  const nextIndex = (currentPlayerIndex + 1) % players.length;
+  const nextName  = players[nextIndex];
+  document.getElementById('nextHeadline').textContent = `À ${nextName} de jouer ! 🎉`;
+  document.getElementById('nextSub').textContent =
+    `La banque reste à ${bankTotal()}g — bonne chance !`;
+  document.getElementById('overlay-next').classList.add('open');
+}
+
+function confirmNextPlayer() {
+  document.getElementById('overlay-next').classList.remove('open');
+  // Porter les 3 cartes dans la banque, vider la table, joueur suivant
+  bankCarry += tourCards.length;
+  tourCards  = [];
+  renderTable();
+  updateBank();
+  advancePlayer();
+  renderQuestion();
+}
+
+// ── DRINK SHEET ───────────────────────────────────────
+function openDrinkSheet(total, mult) {
+  document.getElementById('drinkName').textContent   = currentPlayer() + ' boit';
+  document.getElementById('drinkAmount').textContent = total;
+  document.getElementById('drinkSub').textContent    =
+    'gorgée' + (total !== 1 ? 's' : '') + ' à boire' + (mult > 1 ? ` (×${mult})` : '') + ' 🍺';
+  document.getElementById('overlay-drink').classList.add('open');
+}
+
+function confirmDrink() {
+  document.getElementById('overlay-drink').classList.remove('open');
+  // Banque vidée, table vide — même joueur, il repart en question 1
+  bankCarry = 0; tourCards = [];
+  updateBank();
+  renderTable();
+  renderQuestion();
+}
+
+// ── TOAST ─────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── BOOT ──────────────────────────────────────────────
+loadPlayers();
+initGame();
+</script>
+</body>
+</html>
